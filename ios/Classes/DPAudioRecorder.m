@@ -4,8 +4,9 @@
 #import <AVFoundation/AVFoundation.h>
 #import <UIKit/UIKit.h>
 #import "JX_GCDTimerManager.h"
-
-
+#import <lame/lame.h>
+#import "AudioTool2.h"
+#import "VoiceConverter.h"
 
 #define MAX_RECORDER_TIME 2100  //最大录制时间
 #define MIN_RECORDER_TIME 1    // 最小录制时间
@@ -21,7 +22,7 @@ typedef NS_ENUM(NSUInteger, CSVoiceType) {
 static const CSVoiceType preferredVoiceType = CSVoiceTypeWav;
 
 
-@interface DPAudioRecorder () <AVAudioRecorderDelegate>
+@interface DPAudioRecorder () <AVAudioRecorderDelegate,AudioToolDelegate>
 {
     BOOL isRecording;
     dispatch_source_t timer;
@@ -29,6 +30,8 @@ static const CSVoiceType preferredVoiceType = CSVoiceTypeWav;
 }
 @property (nonatomic, strong) AVAudioRecorder *audioRecorder;
 @property (nonatomic, strong) NSString *originWaveFilePath;
+@property (nonatomic, strong) AudioTool2 *audioTool2;
+
 @end
 
 @implementation DPAudioRecorder
@@ -198,12 +201,57 @@ static DPAudioRecorder *recorderManager = nil;
 }
 
 #pragma mark - AVAudioRecorder
-
+- (void)audio_PCMtoMP3:(NSString *)soucePath andDesPath:(NSString *)desPath {
+    NSLog(@"开始转换");
+    NSLog(@"原地址:%@",soucePath);
+    NSLog(@"新地址:%@",desPath);
+    @try {
+        int read, write;
+        FILE *pcm = fopen([soucePath cStringUsingEncoding:1],"rb"); // source 被转换的音频文件位置
+        fseek(pcm, 4 * 1024, SEEK_CUR); // skip file header
+        FILE *mp3 = fopen([desPath cStringUsingEncoding:1],"wb"); // output 输出生成的Mp3文件位置
+        const int PCM_SIZE = 8192;
+        const int MP3_SIZE = 8192;
+        short int pcm_buffer[PCM_SIZE * 2];
+        unsigned char mp3_buffer[MP3_SIZE];
+        lame_t lame = lame_init();
+        lame_set_in_samplerate(lame, 44100.0);
+        lame_set_VBR(lame, vbr_default);
+        lame_init_params(lame);
+        do {
+            read = fread(pcm_buffer, 2 * sizeof(short int), PCM_SIZE, pcm);
+            if (read == 0)
+                write = lame_encode_flush(lame, mp3_buffer, MP3_SIZE);
+            else
+                write = lame_encode_buffer_interleaved(lame, pcm_buffer, read,
+                                                       mp3_buffer, MP3_SIZE);
+            
+            fwrite(mp3_buffer, write, 1, mp3);
+            
+        } while (read != 0);
+        lame_close(lame);
+        fclose(mp3);
+        fclose(pcm);
+    } @catch (NSException *exception) {
+        NSLog(@"%@", [exception description]);
+    } @finally {
+        NSLog(@"MP3生成成功");
+    }
+}
 - (void)audioRecorderDidFinishRecording:(AVAudioRecorder *)recorder successfully:(BOOL)flag
 {
     //暂存录音文件路径
-    NSString *wavRecordFilePath = self.originWaveFilePath;
-    NSLog(@"录音暂存位置 %@ ",wavRecordFilePath);
+    NSString * wavRecordFilePath = self.originWaveFilePath;
+    NSString * desPath = [wavRecordFilePath stringByReplacingOccurrencesOfString:@"WAVtemporaryRadio.wav" withString:@"result.mp3"];
+    
+    NSLog(@"原始文件地址:%@ ",wavRecordFilePath);
+    NSLog(@"新的文件地址:%@ ",desPath);
+
+//    
+//    [self audio_PCMtoMP3:wavRecordFilePath andDesPath:desPath];
+//    VoiceConverter * voiceConverter = [[VoiceConverter alloc]init];
+    [VoiceConverter ConvertWavToMp3:wavRecordFilePath mp3SavePath:desPath];
+    
     NSData *cacheAudioData;
     switch (preferredVoiceType) {
         case CSVoiceTypeWav:
@@ -319,5 +367,29 @@ NSData* WriteWavFileHeader(long lengthWithHeader, int sampleRate, int channels, 
     if (isRecording) [self.audioRecorder stop];
      [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
+
+-(AudioTool2 *)audioTool2{
+    if (!_audioTool2) {
+        _audioTool2 = [AudioTool2 new];
+        _audioTool2.audioToolDelegate = self;
+    }
+    
+    return _audioTool2;
+}
+-(void)statrPCMtoMP3{
+    NSLog(@"正在转换....");
+}
+
+-(void)endPCMtoMP3{
+    NSLog(@"结束转换....");
+}
+
+-(void)startSynthesis{
+    NSLog(@"正在合成....");
+}
+-(void)endSynthesis{
+    NSLog(@"合成结束....");
+}
+
 
 @end

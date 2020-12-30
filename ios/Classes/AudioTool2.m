@@ -148,26 +148,19 @@
     NSLog(@"开始转换");
     NSLog(@"原地址:%@",soucePath);
     NSLog(@"新地址:%@",desPath);
-
     @try {
         int read, write;
-        
-        FILE *pcm = fopen([soucePath cStringUsingEncoding:1],
-                          "rb"); // source 被转换的音频文件位置
+        FILE *pcm = fopen([soucePath cStringUsingEncoding:1],"rb"); // source 被转换的音频文件位置
         fseek(pcm, 4 * 1024, SEEK_CUR); // skip file header
-        FILE *mp3 = fopen([desPath cStringUsingEncoding:1],
-                          "wb"); // output 输出生成的Mp3文件位置
-        
+        FILE *mp3 = fopen([desPath cStringUsingEncoding:1],"wb"); // output 输出生成的Mp3文件位置
         const int PCM_SIZE = 8192;
         const int MP3_SIZE = 8192;
         short int pcm_buffer[PCM_SIZE * 2];
         unsigned char mp3_buffer[MP3_SIZE];
-        
         lame_t lame = lame_init();
         lame_set_in_samplerate(lame, 44100.0);
         lame_set_VBR(lame, vbr_default);
         lame_init_params(lame);
-        
         do {
             read = fread(pcm_buffer, 2 * sizeof(short int), PCM_SIZE, pcm);
             if (read == 0)
@@ -179,7 +172,6 @@
             fwrite(mp3_buffer, write, 1, mp3);
             
         } while (read != 0);
-        
         lame_close(lame);
         fclose(mp3);
         fclose(pcm);
@@ -214,23 +206,18 @@
     //把文件复制到带合成文件路径
     NSString *synthesisFilePath = [self.filePath stringByAppendingPathComponent:synthesisFileName];
     [[NSFileManager defaultManager] copyItemAtPath:filePathA toPath:synthesisFilePath error:nil];
-    
+
     // 更新的方式读取文件A
     NSFileHandle *handleA = [NSFileHandle fileHandleForUpdatingAtPath:synthesisFilePath];
     [handleA seekToEndOfFile];
-    
-    NSDictionary *fileBDic =
-    [[NSFileManager defaultManager] attributesOfItemAtPath:filePathB
-                                                     error:nil];
+    NSDictionary *fileBDic =[[NSFileManager defaultManager] attributesOfItemAtPath:filePathB error:nil];
     long long fileSizeB = fileBDic.fileSize;
     
     // 大于xM分片拼接xM
     if (fileSizeB > KFILESIZE) {
-        
         // 分片
         long long pieces = fileSizeB / KFILESIZE; // 整片
         long long let = fileSizeB % KFILESIZE;    // 剩余片
-        
         long long sizes = pieces;
         // 有余数
         if (let > 0) {
