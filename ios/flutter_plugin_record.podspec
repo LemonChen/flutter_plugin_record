@@ -7,6 +7,7 @@ Pod::Spec.new do |s|
   s.version          = '0.0.1'
   s.summary          = 'A new Flutter plugin.'
   s.description      = <<-DESC
+  s.static_framework = true
 A new Flutter plugin.
                        DESC
   s.homepage         = 'http://example.com'
@@ -20,5 +21,9 @@ A new Flutter plugin.
   s.dependency 'Flutter'
   s.framework  = "AVFoundation"
   s.ios.deployment_target = '8.0'
+  s.ios.vendored_frameworks = 'Frameworks/lame.framework'
+  s.vendored_frameworks = 'lame.framework'
+
+  
 end
 
