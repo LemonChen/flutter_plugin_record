@@ -219,8 +219,9 @@ class FlutterPluginRecordPlugin : MethodCallHandler, PluginRegistry.RequestPermi
 
 
     private fun init() {
-        recordMp3=false
+        recordMp3=true
         checkPermission()
+        initWavToMp3()
     }
     private fun initRecordMp3(){
         recordMp3=true
