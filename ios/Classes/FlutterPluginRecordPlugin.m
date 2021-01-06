@@ -94,11 +94,11 @@
     };
     DPAudioRecorder.sharedInstance.audioRecordingFail = ^void(NSString *reason){
         
-        NSLog(@"ios  voice %@", reason);
+//        NSLog(@"ios  voice %@", reason);
         
     };
     DPAudioRecorder.sharedInstance.audioSpeakPower = ^void(float power){
-        NSLog(@"ios  voice %f",power);
+//        NSLog(@"ios  voice %f",power);
         NSString *powerStr = [NSString stringWithFormat:@"%f", power];
         NSDictionary *args =   [self->_call arguments];
         NSString *mId = [args valueForKey:@"id"];
